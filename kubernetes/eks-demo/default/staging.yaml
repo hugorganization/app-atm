@@ -1,0 +1,13 @@
+repositories:
+  - name: mis-charts
+    url: https://hugorganization.github.io/charts
+
+releases:
+  - name: atm
+    namespace: atm-staging
+    chart: mis-charts/atm
+    version: 0.3.0
+    values:
+      - staging/global.yaml
+      - staging/ms-fake-uno-values.yaml
+      - staging/ms-fake-dos-values.yaml

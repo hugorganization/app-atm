@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'kubernetes/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar helm y helmfile
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          curl -fsSL https://github.com/helmfile/helmfile/releases/download/v1.7.0/helmfile_1.7.0_linux_amd64.tar.gz | tar xz helmfile
+          sudo mv helmfile /usr/local/bin/helmfile
+
+      - name: Validar (render sin escribir)
+        run: |
+          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /dev/null

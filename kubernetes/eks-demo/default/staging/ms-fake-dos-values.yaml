@@ -1,0 +1,27 @@
+ms-fake-dos:
+  image:
+    tag: "1.30.4"
+  config:
+    env:
+      enabled: true
+      data:
+        RDS_HOST: postgres-dos.demo.local
+        APP_MODE: dos
+    file:
+      enabled: true
+      fileName: application.yml
+      content: |-
+        server:
+          port: 8080
+        datasource:
+          url: jdbc:postgresql://${RDS_HOST}:5432/atm_dos
+          username: atm_dos
+          password: ${DB_PASSWORD}
+  externalSecret:
+    enabled: true
+    secretStoreRef:
+      name: aws-secretsmanager
+    data:
+      - secretKey: DB_PASSWORD
+        remoteRef:
+          key: /practica/atm/ms-fake-dos/db/password #ruta inventada
