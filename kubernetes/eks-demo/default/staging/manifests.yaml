@@ -1,0 +1,294 @@
+---
+# Source: atm/charts/ms-fake-dos/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: atm/charts/ms-fake-uno/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: atm/charts/ms-fake-dos/templates/configmap-env.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-dos-env
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_MODE: "dos"
+  LOG_LEVEL: "info"
+  RDS_HOST: "postgres-dos.demo.local"
+---
+# Source: atm/charts/ms-fake-dos/templates/configmap-file.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-dos-file
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  application.yml: |
+    server:
+      port: 8080
+    datasource:
+      url: jdbc:postgresql://${RDS_HOST}:5432/atm_dos
+      username: atm_dos
+      password: ${DB_PASSWORD}
+---
+# Source: atm/charts/ms-fake-uno/templates/configmap-env.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-uno-env
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_MODE: "uno"
+  LOG_LEVEL: "debug"
+  RDS_HOST: "postgres-uno.demo.local"
+---
+# Source: atm/charts/ms-fake-uno/templates/configmap-file.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-uno-file
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  application.yml: |
+    server:
+      port: 8080
+    datasource:
+      url: ${RDS_HOST}
+      password: ${DB_PASSWORD}
+---
+# Source: atm/charts/ms-fake-dos/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+---
+# Source: atm/charts/ms-fake-uno/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+---
+# Source: atm/charts/ms-fake-dos/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ms-fake-dos
+      app.kubernetes.io/instance: atm
+  template:
+    metadata:
+      annotations:
+        checksum/config-env: ea181c189185e1c14eaea61bf136bd0389b50d01b098d22375bdc12440cc2adc
+        checksum/config-file: 208eb5526951018eaccc4ead6650ee8e95b58bbf2afe03287b08ab0b6a45d01c
+      labels:
+        app.kubernetes.io/name: ms-fake-dos
+        app.kubernetes.io/instance: atm
+    spec:
+      serviceAccountName: atm-ms-fake-dos
+      containers:
+        - name: ms-fake-dos
+          image: "nginx:1.30.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: atm-ms-fake-dos-env
+            - secretRef:
+                name: atm-ms-fake-dos
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: config
+          configMap:
+            name: atm-ms-fake-dos-file
+---
+# Source: atm/charts/ms-fake-uno/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ms-fake-uno
+      app.kubernetes.io/instance: atm
+  template:
+    metadata:
+      annotations:
+        checksum/config-env: 2edb802c997d86edffacf31784aee75a2184e48c4dd48ae1647081aef2c56051
+        checksum/config-file: 7d5f815d79deb4b790bfdc5acd2632aeec2eacac2c1176d1703dc45d017b045b
+      labels:
+        app.kubernetes.io/name: ms-fake-uno
+        app.kubernetes.io/instance: atm
+    spec:
+      serviceAccountName: atm-ms-fake-uno
+      containers:
+        - name: ms-fake-uno
+          image: "nginx:1.30.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: atm-ms-fake-uno-env
+            - secretRef:
+                name: atm-ms-fake-uno
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: config
+          configMap:
+            name: atm-ms-fake-uno-file
+---
+# Source: atm/charts/ms-fake-dos/templates/externalsecret.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: aws-secretsmanager
+    kind: SecretStore
+  target:
+    name: atm-ms-fake-dos
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - remoteRef:
+        key: /practica/atm/ms-fake-dos/db/password
+      secretKey: DB_PASSWORD
+---
+# Source: atm/charts/ms-fake-uno/templates/externalsecret.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: aws-secretsmanager
+    kind: SecretStore
+  target:
+    name: atm-ms-fake-uno
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - remoteRef:
+        key: /practica/atm/ms-fake-uno/db/password
+      secretKey: DB_PASSWORD
+
