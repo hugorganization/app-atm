@@ -12,4 +12,4 @@ metadata:
 data:
   APP_MODE: "dos"
   LOG_LEVEL: "info"
-  RDS_HOST: "postgres-dos.demo.local"
+  RDS_HOST: "postgres-bd-dos.demo.local"

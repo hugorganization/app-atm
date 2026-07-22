@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-env: ea181c189185e1c14eaea61bf136bd0389b50d01b098d22375bdc12440cc2adc
+        checksum/config-env: 35e78e36036750db5c0c8414004e9f2f874efd875b438820afe8760d295bccff
         checksum/config-file: 73bc7d5592daf911725fb4e21e4e57e84cd784d894c5ce3bb468e555cd4fce72
       labels:
         app.kubernetes.io/name: ms-fake-dos
