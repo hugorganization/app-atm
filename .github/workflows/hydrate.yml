@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   hydrate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -21,19 +21,22 @@ jobs:
           ref: deployment
           path: deployment-branch
 
-      - name: Instalar helm y helmfile
+      - name: Instalar helm, helmfile y kubectl slice (para separar los manifests)
         run: |
           curl -fsSL https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz | tar xz
           sudo mv linux-amd64/helm /usr/local/bin/helm
           curl -fsSL https://github.com/helmfile/helmfile/releases/download/v1.7.0/helmfile_1.7.0_linux_amd64.tar.gz | tar xz helmfile
           sudo mv helmfile /usr/local/bin/helmfile
+          curl -fsSL https://github.com/patrickdappollonio/kubectl-slice/releases/download/v1.4.2/kubectl-slice_linux_x86_64.tar.gz | tar xz kubectl-slice
+          sudo mv kubectl-slice /usr/local/bin/kubectl-slice
 
-      - name: Hidratar (render → manifiestos)
+      - name: Hidratar (render → manifiestos separados)
         run: |
           OUT=deployment-branch/kubernetes/eks-demo/default/staging
           rm -rf "$OUT"
           mkdir -p "$OUT"
-          helmfile -f kubernetes/eks-demo/default/staging.yaml template > "$OUT/manifests.yaml"
+          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml            kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
+            --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
       - name: Commitear a deployment
         working-directory: deployment-branch
