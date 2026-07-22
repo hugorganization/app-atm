@@ -35,7 +35,8 @@ jobs:
           OUT=deployment-branch/kubernetes/eks-demo/default/staging
           rm -rf "$OUT"
           mkdir -p "$OUT"
-          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml            kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
+          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml            
+          kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
             --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
       - name: Commitear a deployment
