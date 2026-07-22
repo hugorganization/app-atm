@@ -1,0 +1,50 @@
+# Source: atm/charts/ms-fake-uno/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ms-fake-uno
+      app.kubernetes.io/instance: atm
+  template:
+    metadata:
+      annotations:
+        checksum/config-env: 2edb802c997d86edffacf31784aee75a2184e48c4dd48ae1647081aef2c56051
+        checksum/config-file: 7d5f815d79deb4b790bfdc5acd2632aeec2eacac2c1176d1703dc45d017b045b
+      labels:
+        app.kubernetes.io/name: ms-fake-uno
+        app.kubernetes.io/instance: atm
+    spec:
+      serviceAccountName: atm-ms-fake-uno
+      containers:
+        - name: ms-fake-uno
+          image: "nginx:1.30.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: atm-ms-fake-uno-env
+            - secretRef:
+                name: atm-ms-fake-uno
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: config
+          configMap:
+            name: atm-ms-fake-uno-file

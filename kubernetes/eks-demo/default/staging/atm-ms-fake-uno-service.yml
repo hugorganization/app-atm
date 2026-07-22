@@ -1,0 +1,21 @@
+# Source: atm/charts/ms-fake-uno/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: atm-ms-fake-uno
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm

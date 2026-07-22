@@ -1,0 +1,21 @@
+# Source: atm/charts/ms-fake-dos/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm

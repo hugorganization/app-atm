@@ -1,0 +1,15 @@
+# Source: atm/charts/ms-fake-dos/templates/configmap-env.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-dos-env
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_MODE: "dos"
+  LOG_LEVEL: "info"
+  RDS_HOST: "postgres-dos.demo.local"

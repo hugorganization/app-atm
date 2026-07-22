@@ -1,0 +1,15 @@
+# Source: atm/charts/ms-fake-uno/templates/configmap-env.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-uno-env
+  labels:
+    helm.sh/chart: ms-fake-uno-0.3.0
+    app.kubernetes.io/name: ms-fake-uno
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_MODE: "uno"
+  LOG_LEVEL: "debug"
+  RDS_HOST: "postgres-uno.demo.local"
