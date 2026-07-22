@@ -40,12 +40,16 @@ jobs:
           kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
             --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
-      - name: Commitear a deployment
-        working-directory: deployment-branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet && { echo "Sin cambios que hidratar"; exit 0; }
-          git commit -m "chore: hydrate staging (${GITHUB_SHA::7})"
-          git push origin deployment
+      - name: Crear o actualizar el PR a deployment
+        uses: peter-evans/create-pull-request@v8
+        with:
+          path: deployment-branch
+          base: deployment
+          branch: auto/hydrate-staging
+          delete-branch: true
+          commit-message: "chore: hydrate staging (${{ github.sha }})"
+          title: "Hydrate: staging"
+          body: |
+            Manifiestos de staging regenerados automáticamente por el hydrate.
+            **Mergea este PR para aplicar los cambios a `deployment`.**
+          labels: hydrate
