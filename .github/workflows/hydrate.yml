@@ -41,6 +41,7 @@ jobs:
             --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
       - name: Crear o actualizar el PR a deployment
+        id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
           path: deployment-branch
@@ -53,3 +54,28 @@ jobs:
             Manifiestos de staging regenerados automáticamente por el hydrate.
             **Mergea este PR para aplicar los cambios a `deployment`.**
           labels: hydrate
+      - name: Resumen
+        if: always()
+        run: |
+         OUT=deployment-branch/kubernetes/eks-demo/default/staging
+         VERSION=$(grep -E '^\s*version:' kubernetes/eks-demo/default/staging.yaml | head -1 | awk '{print $2}')
+         {
+           echo "## 🚀 Hidratación de staging"
+           echo ""
+           echo "| Campo | Valor |"
+           echo "|---|---|"
+           echo "| Ambiente | \`eks-demo/default/staging\` |"
+           echo "| Chart | \`atm\` versión \`$VERSION\` |"
+           echo "| Manifiestos | $(ls "$OUT" | wc -l | tr -d ' ') ficheros |"
+           echo "| Acción del PR | ${{ steps.cpr.outputs.pull-request-operation }} |"
+           if [ -n "${{ steps.cpr.outputs.pull-request-number }}" ]; then
+             echo "| PR | [#${{ steps.cpr.outputs.pull-request-number }}](${{ steps.cpr.outputs.pull-request-url }}) |"
+           else
+             echo "| PR | (sin cambios, no se creó) |"
+           fi
+           echo ""
+           echo "### Ficheros generados"
+           echo '```'
+           ls "$OUT"
+           echo '```'
+         } >> "$GITHUB_STEP_SUMMARY"
