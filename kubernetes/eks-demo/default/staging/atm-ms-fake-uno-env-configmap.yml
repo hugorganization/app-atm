@@ -12,4 +12,4 @@ metadata:
 data:
   APP_MODE: "uno"
   LOG_LEVEL: "debug"
-  RDS_HOST: "postgres-uno.demo.local"
+  RDS_HOST: "postgres-bd_uno.demo.local"
