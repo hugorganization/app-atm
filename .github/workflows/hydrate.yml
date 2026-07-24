@@ -40,42 +40,50 @@ jobs:
           kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
             --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
-      - name: Crear o actualizar el PR a deployment
-        id: cpr
+      - name: PR de ms-fake-uno
+        id: cpr_uno
         uses: peter-evans/create-pull-request@v8
         with:
           path: deployment-branch
           base: deployment
-          branch: auto/hydrate-staging
+          branch: auto/hydrate-staging-ms-fake-uno
+          add-paths: kubernetes/eks-demo/default/staging/atm-ms-fake-uno-*
           delete-branch: true
-          commit-message: "chore: hydrate staging (${{ github.sha }})"
-          title: "Hydrate: staging"
+          commit-message: "chore: hydrate staging ms-fake-uno (${{ github.sha }})"
+          title: "Hydrate: ms-fake-uno (staging)"
           body: |
-            Manifiestos de staging regenerados automáticamente por el hydrate.
-            **Mergea este PR para aplicar los cambios a `deployment`.**
+            Manifiestos de **ms-fake-uno** en staging.
+            Mergea para aplicar a `deployment`.
           labels: hydrate
+
+      - name: PR de ms-fake-dos
+        id: cpr_dos
+        uses: peter-evans/create-pull-request
+        with:
+          path: deployment-branch
+          base: deployment
+          branch: auto/hydrate-staging-ms-fak
+          add-paths: kubernetes/eks-demo/default/staging/atm-ms-fake-dos-*
+          delete-branch: true
+          commit-message: "chore: hydrate staging ms-fake-dos (${{ github.sha }})"
+          title: "Hydrate: ms-fake-dos (staging)"
+          body: |
+            Manifiestos de **ms-fake-dos** en staging.
+            Mergea para aplicar a `deployment`.
+          labels: hydrate
+
       - name: Resumen
         if: always()
         run: |
-         OUT=deployment-branch/kubernetes/eks-demo/default/staging
-         VERSION=$(grep -E '^\s*version:' kubernetes/eks-demo/default/staging.yaml | head -1 | awk '{print $2}')
-         {
-           echo "## 🚀 Hidratación de staging"
-           echo ""
-           echo "| Campo | Valor |"
-           echo "|---|---|"
-           echo "| Ambiente | \`eks-demo/default/staging\` |"
-           echo "| Chart | \`atm\` versión \`$VERSION\` |"
-           echo "| Manifiestos | $(ls "$OUT" | wc -l | tr -d ' ') ficheros |"
-           echo "| Acción del PR | ${{ steps.cpr.outputs.pull-request-operation }} |"
-           if [ -n "${{ steps.cpr.outputs.pull-request-number }}" ]; then
-             echo "| PR | [#${{ steps.cpr.outputs.pull-request-number }}](${{ steps.cpr.outputs.pull-request-url }}) |"
-           else
-             echo "| PR | (sin cambios, no se creó) |"
-           fi
-           echo ""
-           echo "### Ficheros generados"
-           echo '```'
-           ls "$OUT"
-           echo '```'
-         } >> "$GITHUB_STEP_SUMMARY"
+          OUT=deployment-branch/kubernetes/eks-demo/default/staging
+          VERSION=$(grep -E '^\s*version:' kubernetes/eks-demo/default/staging.yaml | head -1 | awk '{print $2}')
+          {
+            echo "## 🚀 Hidratación de staging"
+            echo ""
+            echo "Chart \`atm\` versión \`$VERSION\` — $(ls "$OUT" | wc -l | tr -d ' ') manifiestos."
+            echo ""
+            echo "| Microservicio | Acción del PR | PR |"
+            echo "|---|---|---|"
+            echo "| ms-fake-uno | ${{ steps.cpr_uno.outputs.pull-request-operation || 'none' }} | ${{ steps.cpr_uno.outputs.pull-request-url || '—' }} |"
+            echo "| ms-fake-dos | ${{ steps.cpr_dos.outputs.pull-request-operation || 'none' }} | ${{ steps.cpr_dos.outputs.pull-request-url || '—' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
