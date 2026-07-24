@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-env: 2edb802c997d86edffacf31784aee75a2184e48c4dd48ae1647081aef2c56051
+        checksum/config-env: 4d076abf70f2119f0ebae3a6758b9d6b1fe4983dc3570edba40b3531966be2d4
         checksum/config-file: 7d5f815d79deb4b790bfdc5acd2632aeec2eacac2c1176d1703dc45d017b045b
       labels:
         app.kubernetes.io/name: ms-fake-uno
