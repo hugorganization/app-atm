@@ -58,11 +58,11 @@ jobs:
 
       - name: PR de ms-fake-dos
         id: cpr_dos
-        uses: peter-evans/create-pull-request
+        uses: peter-evans/create-pull-request@v8
         with:
           path: deployment-branch
           base: deployment
-          branch: auto/hydrate-staging-ms-fak
+          branch: auto/hydrate-staging-ms-fake-dos
           add-paths: kubernetes/eks-demo/default/staging/atm-ms-fake-dos-*
           delete-branch: true
           commit-message: "chore: hydrate staging ms-fake-dos (${{ github.sha }})"
