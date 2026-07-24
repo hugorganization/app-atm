@@ -5,7 +5,7 @@ ms-fake-dos:
     env:
       enabled: true
       data:
-        RDS_HOST: postgres-bd-dos.demo.local #cambio2 para ver fusion
+        RDS_HOST: postgres-bd_dos.demo.local #cambio2 para ver fusion
         APP_MODE: dos
     file:
       enabled: true
