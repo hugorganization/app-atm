@@ -14,6 +14,6 @@ data:
     server:
       port: 8080
     datasource:
-      url: jdbc:postgresql://${RDS_HOST}:5435/atm_dos
+      url: jdbc:postgresql://${RDS_HOST}:5434/atm_dos
       username: atm_dos
       password: ${DB_PASSWORD}
