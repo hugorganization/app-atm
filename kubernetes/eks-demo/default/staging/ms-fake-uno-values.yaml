@@ -6,7 +6,7 @@ ms-fake-uno:
       enabled: true
       data:
         RDS_HOST: postgres-bd-uno.demo.local #cambio1
-        APP_MODE: uno
+        APP_MODE: uno_test
     file:
       enabled: true
       fileName: application.yml
