@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   hydrate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -22,7 +22,7 @@ jobs:
           ref: deployment
           path: deployment-branch
 
-      - name: Instalar helm, helmfile y kubectl slice (para separar los manifests)
+      - name: Instalar helm, helmfile y kubectl-slice
         run: |
           curl -fsSL https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz | tar xz
           sudo mv linux-amd64/helm /usr/local/bin/helm
@@ -31,59 +31,60 @@ jobs:
           curl -fsSL https://github.com/patrickdappollonio/kubectl-slice/releases/download/v1.4.2/kubectl-slice_linux_x86_64.tar.gz | tar xz kubectl-slice
           sudo mv kubectl-slice /usr/local/bin/kubectl-slice
 
-      - name: Hidratar (render → manifiestos separados)
+      - name: Renderizar y separar (a carpeta temporal)
         run: |
-          OUT=deployment-branch/kubernetes/eks-demo/default/staging
-          rm -rf "$OUT"
-          mkdir -p "$OUT"
-          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml            
-          kubectl-slice --input-file /tmp/rendered.yaml --output-dir "$OUT" \
+          rm -rf /tmp/out && mkdir -p /tmp/out
+          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml
+          kubectl-slice --input-file /tmp/rendered.yaml --output-dir /tmp/out \
             --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
-      - name: PR de ms-fake-uno
-        id: cpr_uno
-        uses: peter-evans/create-pull-request@v8
-        with:
-          path: deployment-branch
-          base: deployment
-          branch: auto/hydrate-staging-ms-fake-uno
-          add-paths: kubernetes/eks-demo/default/staging/atm-ms-fake-uno-*
-          delete-branch: true
-          commit-message: "chore: hydrate staging ms-fake-uno (${{ github.sha }})"
-          title: "Hydrate: ms-fake-uno (staging)"
-          body: |
-            Manifiestos de **ms-fake-uno** en staging.
-            Mergea para aplicar a `deployment`.
-          labels: hydrate
-
-      - name: PR de ms-fake-dos
-        id: cpr_dos
-        uses: peter-evans/create-pull-request@v8
-        with:
-          path: deployment-branch
-          base: deployment
-          branch: auto/hydrate-staging-ms-fake-dos
-          add-paths: kubernetes/eks-demo/default/staging/atm-ms-fake-dos-*
-          delete-branch: true
-          commit-message: "chore: hydrate staging ms-fake-dos (${{ github.sha }})"
-          title: "Hydrate: ms-fake-dos (staging)"
-          body: |
-            Manifiestos de **ms-fake-dos** en staging.
-            Mergea para aplicar a `deployment`.
-          labels: hydrate
-
-      - name: Resumen
-        if: always()
+      - name: Un PR por microservicio
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          OUT=deployment-branch/kubernetes/eks-demo/default/staging
-          VERSION=$(grep -E '^\s*version:' kubernetes/eks-demo/default/staging.yaml | head -1 | awk '{print $2}')
+          STAGING=kubernetes/eks-demo/default/staging
+          RELEASE_FILE=kubernetes/eks-demo/default/staging.yaml
+
+          cd deployment-branch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin deployment
+
+          VERSION=$(grep -E '^\s*version:' "../$RELEASE_FILE" | head -1 | awk '{print $2}')
           {
             echo "## 🚀 Hidratación de staging"
             echo ""
-            echo "Chart \`atm\` versión \`$VERSION\` — $(ls "$OUT" | wc -l | tr -d ' ') manifiestos."
+            echo "Chart \`atm\` versión \`$VERSION\`"
             echo ""
-            echo "| Microservicio | Acción del PR | PR |"
-            echo "|---|---|---|"
-            echo "| ms-fake-uno | ${{ steps.cpr_uno.outputs.pull-request-operation || 'none' }} | ${{ steps.cpr_uno.outputs.pull-request-url || '—' }} |"
-            echo "| ms-fake-dos | ${{ steps.cpr_dos.outputs.pull-request-operation || 'none' }} | ${{ steps.cpr_dos.outputs.pull-request-url || '—' }} |"
+            echo "| Microservicio | PR |"
+            echo "|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          for vf in "../$STAGING"/*-values.yaml; do
+            svc=$(basename "$vf" -values.yaml)
+            branch="auto/hydrate-staging-$svc"
+            echo "▶ $svc"
+
+            git checkout -B "$branch" origin/deployment
+            rm -f "$STAGING"/*"$svc"-*
+            cp /tmp/out/*"$svc"-* "$STAGING"/ 2>/dev/null || true
+            git add "$STAGING"
+
+            if git diff --cached --quiet; then
+              echo "  sin cambios, salto"
+              echo "| $svc | (sin cambios) |" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            git commit -m "chore: hydrate staging $svc"
+            git push -f origin "$branch"
+
+            url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
+            if [ -z "$url" ]; then
+              url=$(gh pr create --base deployment --head "$branch" \
+                --title "Hydrate: $svc (staging)" \
+                --body "Manifiestos de **$svc** en staging. Mergea para aplicar a \`deployment\`." \
+                --label hydrate)
+            fi
+            echo "| $svc | $url |" >> "$GITHUB_STEP_SUMMARY"
+          done
