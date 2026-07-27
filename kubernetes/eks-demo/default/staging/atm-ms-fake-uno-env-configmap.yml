@@ -10,6 +10,6 @@ metadata:
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
 data:
-  APP_MODE: "uno"
+  APP_MODE: "uno_test"
   LOG_LEVEL: "debug"
-  RDS_HOST: "postgres-bd_uno.demo.local"
+  RDS_HOST: "postgres-bd-uno.demo.local"
