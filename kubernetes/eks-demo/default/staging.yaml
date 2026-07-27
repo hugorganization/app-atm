@@ -6,7 +6,7 @@ releases:
   - name: atm
     namespace: atm-staging
     chart: mis-charts/atm
-    version: 0.5.0
+    version: 0.6.0
     values:
       - staging/global.yaml
       - staging/ms-fake-uno-values.yaml
