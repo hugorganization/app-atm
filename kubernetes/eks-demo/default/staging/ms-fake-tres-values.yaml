@@ -1,0 +1,26 @@
+ms-fake-tres:
+  image:
+    tag: "1.30.4"
+  config:
+    env:
+      enabled: true
+      data:
+        RDS_HOST: postgres-bd-tres.demo.local #cambio1
+        APP_MODE: tres
+    file:
+      enabled: true
+      fileName: application.yml
+      content: |-
+        server:
+          port: 8080
+        datasource:
+          url: ${RDS_HOST}
+          password: ${DB_PASSWORD}
+  externalSecret:
+    enabled: true
+    secretStoreRef:
+      name: aws-secretsmanager
+    data:
+      - secretKey: DB_PASSWORD
+        remoteRef:
+          key: /practica/atm/ms-fake-tres/db/password #ruta inventada
