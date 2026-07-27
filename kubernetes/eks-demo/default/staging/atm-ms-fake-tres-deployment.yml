@@ -1,0 +1,50 @@
+# Source: atm/charts/ms-fake-tres/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atm-ms-fake-tres
+  labels:
+    helm.sh/chart: ms-fake-tres-0.3.0
+    app.kubernetes.io/name: ms-fake-tres
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ms-fake-tres
+      app.kubernetes.io/instance: atm
+  template:
+    metadata:
+      annotations:
+        checksum/config-env: 7f04cd99df29e0a0cb551741e562db112c8203b74ccd7e211e014a162095b521
+        checksum/config-file: b601a3a668471d66e6b7e25822ae58d325e0061984f5d348cca51bfec10cba9c
+      labels:
+        app.kubernetes.io/name: ms-fake-tres
+        app.kubernetes.io/instance: atm
+    spec:
+      serviceAccountName: atm-ms-fake-tres
+      containers:
+        - name: ms-fake-tres
+          image: "nginx:1.30.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: atm-ms-fake-tres-env
+            - secretRef:
+                name: atm-ms-fake-tres
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: config
+          configMap:
+            name: atm-ms-fake-tres-file
