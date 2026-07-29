@@ -1,0 +1,28 @@
+ms-fake-dos:
+  image:
+    tag: "1.30.4"
+  config:
+    env:
+      enabled: true
+      data:
+        RDS_HOST: postgres-bd-dos.demo.local #cambio2 para ver fusion
+        APP_MODE: PRO_DOS
+    file:
+      enabled: true
+      fileName: application.yml
+      content: |-
+        server:
+          port: 8080
+        datasource:
+          url: jdbc:postgresql://${RDS_HOST}:5434/atm_dos
+          username: atm_dos
+          password: ${DB_PASSWORD}
+  externalSecret:
+    enabled: true
+    secretStoreRef:
+      name: fake
+      kind: ClusterSecretStore
+    data:
+      - secretKey: DB_PASSWORD
+        remoteRef:
+          key: /practica/atm/ms-fake-dos/db/password #ruta inventada

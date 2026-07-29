@@ -1,0 +1,27 @@
+ms-fake-uno:
+  image:
+    tag: "1.30.4"
+  config:
+    env:
+      enabled: true
+      data:
+        RDS_HOST: postgres-bd-uno.demo.local #cambio1
+        APP_MODE: PRO_UNO
+    file:
+      enabled: true
+      fileName: application.yml
+      content: |-
+        server:
+          port: 8080
+        datasource:
+          url: ${RDS_HOST}
+          password: ${DB_PASSWORD}
+  externalSecret:
+    enabled: true
+    secretStoreRef:
+      name: fake
+      kind: ClusterSecretStore
+    data:
+      - secretKey: DB_PASSWORD
+        remoteRef:
+          key: /practica/atm/ms-fake-uno/db/password #ruta inventada
