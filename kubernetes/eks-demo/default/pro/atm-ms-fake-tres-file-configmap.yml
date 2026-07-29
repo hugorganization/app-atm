@@ -1,0 +1,18 @@
+# Source: atm/charts/ms-fake-tres/templates/configmap-file.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atm-ms-fake-tres-file
+  labels:
+    helm.sh/chart: ms-fake-tres-0.3.0
+    app.kubernetes.io/name: ms-fake-tres
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  application.yml: |
+    server:
+      port: 8080
+    datasource:
+      url: ${RDS_HOST}
+      password: ${DB_PASSWORD}
