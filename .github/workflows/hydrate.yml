@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   hydrate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -31,60 +31,67 @@ jobs:
           curl -fsSL https://github.com/patrickdappollonio/kubectl-slice/releases/download/v1.4.2/kubectl-slice_linux_x86_64.tar.gz | tar xz kubectl-slice
           sudo mv kubectl-slice /usr/local/bin/kubectl-slice
 
-      - name: Renderizar y separar (a carpeta temporal)
-        run: |
-          rm -rf /tmp/out && mkdir -p /tmp/out
-          helmfile -f kubernetes/eks-demo/default/staging.yaml template > /tmp/rendered.yaml
-          kubectl-slice --input-file /tmp/rendered.yaml --output-dir /tmp/out \
-            --template '{{.metadata.name}}-{{.kind | lower}}.yml'
-
-      - name: Un PR por microservicio
+      - name: Hidratar todos los ambientes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          STAGING=kubernetes/eks-demo/default/staging
-          RELEASE_FILE=kubernetes/eks-demo/default/staging.yaml
-
           cd deployment-branch
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin deployment
 
-          VERSION=$(grep -E '^\s*version:' "../$RELEASE_FILE" | head -1 | awk '{print $2}')
-          {
-            echo "## 🚀 Hidratación de staging"
-            echo ""
-            echo "Chart \`atm\` versión \`$VERSION\`"
-            echo ""
-            echo "| Microservicio | PR |"
-            echo "|---|---|"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🚀 Hidratación" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
-          for vf in "../$STAGING"/*-values.yaml; do
-            svc=$(basename "$vf" -values.yaml)
-            branch="auto/hydrate-staging-$svc"
-            echo "▶ $svc"
+          # BUCLE EXTERNO: cada ambiente = un fichero de release *.yaml
+          for release_file in ../kubernetes/*/*/*.yaml; do
+            env_path="${release_file%.yaml}"
+            env_name=$(basename "$env_path")
+            dest="${env_path#../}"
+            echo "=== Ambiente: $env_name ==="
 
-            git checkout -B "$branch" origin/deployment
-            rm -f "$STAGING"/*"$svc"-*
-            cp /tmp/out/*"$svc"-* "$STAGING"/ 2>/dev/null || true
-            git add "$STAGING"
+            VERSION=$(grep -E '^\s*version:' "$release_file" | head -1 | awk '{print $2}')
+            {
+              echo "### $env_name  (chart \`atm\` \`$VERSION\`)"
+              echo ""
+              echo "| Microservicio | PR |"
+              echo "|---|---|"
+            } >> "$GITHUB_STEP_SUMMARY"
 
-            if git diff --cached --quiet; then
-              echo "  sin cambios, salto"
-              echo "| $svc | (sin cambios) |" >> "$GITHUB_STEP_SUMMARY"
-              continue
-            fi
+            rm -rf /tmp/out && mkdir -p /tmp/out
+            helmfile -f "$release_file" template > /tmp/rendered.yaml
+            kubectl-slice --input-file /tmp/rendered.yaml --output-dir /tmp/out \
+              --template '{{.metadata.name}}-{{.kind | lower}}.yml'
 
-            git commit -m "chore: hydrate staging $svc"
-            git push -f origin "$branch"
+            for vf in "$env_path"/*-values.yaml; do
+              svc=$(basename "$vf" -values.yaml)
+              branch="auto/hydrate-$env_name-$svc"
+              echo "▶ $env_name / $svc"
 
-            url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
-            if [ -z "$url" ]; then
-              url=$(gh pr create --base deployment --head "$branch" \
-                --title "Hydrate: $svc (staging)" \
-                --body "Manifiestos de **$svc** en staging. Mergea para aplicar a \`deployment\`." \
-                --label hydrate)
-            fi
-            echo "| $svc | $url |" >> "$GITHUB_STEP_SUMMARY"
+              git checkout -B "$branch" origin/deployment
+              mkdir -p "$dest"
+              rm -f "$dest"/*"$svc"-*
+              cp /tmp/out/*"$svc"-* "$dest"/ 2>/dev/null || true
+              git add "$dest"
+
+              if git diff --cached --quiet; then
+                echo "  sin cambios, salto"
+                echo "| $svc | (sin cambios) |" >> "$GITHUB_STEP_SUMMARY"
+                continue
+              fi
+
+              git commit -m "chore: hydrate $env_name $svc"
+              git push -f origin "$branch"
+
+              url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
+              if [ -z "$url" ]; then
+                url=$(gh pr create --base deployment --head "$branch" \
+                  --title "Hydrate: $env_name / $svc" \
+                  --body "Manifiestos de **$svc** en $env_name. Mergea para aplicar a \`deployment\`." \
+                  --label hydrate)
+              fi
+              echo "| $svc | $url |" >> "$GITHUB_STEP_SUMMARY"
+            done
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
           done

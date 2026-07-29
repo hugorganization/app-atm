@@ -1,0 +1,5 @@
+global:
+  ms-fake-uno:
+    enabled: true
+  ms-fake-dos:
+    enabled: true

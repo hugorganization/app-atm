@@ -19,7 +19,8 @@ ms-fake-uno:
   externalSecret:
     enabled: true
     secretStoreRef:
-      name: aws-secretsmanager
+      name: fake
+      kind: ClusterSecretStore
     data:
       - secretKey: DB_PASSWORD
         remoteRef:
