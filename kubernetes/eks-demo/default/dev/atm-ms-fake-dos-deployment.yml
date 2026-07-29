@@ -1,0 +1,50 @@
+# Source: atm/charts/ms-fake-dos/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atm-ms-fake-dos
+  labels:
+    helm.sh/chart: ms-fake-dos-0.3.0
+    app.kubernetes.io/name: ms-fake-dos
+    app.kubernetes.io/instance: atm
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ms-fake-dos
+      app.kubernetes.io/instance: atm
+  template:
+    metadata:
+      annotations:
+        checksum/config-env: cbcf671efb0111920e3cde6388fd3cb27e9951407b1426c70af0d7c2383d2e35
+        checksum/config-file: b3e995a9f169bfef8ef6f221d5c546c08885153859c2100f77d67f3b832f4d64
+      labels:
+        app.kubernetes.io/name: ms-fake-dos
+        app.kubernetes.io/instance: atm
+    spec:
+      serviceAccountName: atm-ms-fake-dos
+      containers:
+        - name: ms-fake-dos
+          image: "nginx:1.30.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: atm-ms-fake-dos-env
+            - secretRef:
+                name: atm-ms-fake-dos
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: config
+          configMap:
+            name: atm-ms-fake-dos-file
