@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atm-environments
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/hugorganization/app-atm.git
+        revision: deployment
+        directories:
+          - path: kubernetes/*/*/*
+  template:
+    metadata:
+      name: '{{index .path.segments 1}}-{{index .path.segments 2}}-{{.path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/hugorganization/app-atm.git
+        targetRevision: deployment
+        path: '{{.path.path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{index .path.segments 1}}-{{index .path.segments 2}}-{{.path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
