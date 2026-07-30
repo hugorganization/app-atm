@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root
+  name: services
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/hugorganization/app-atm.git
     targetRevision: main
-    path: argocd
+    path: argocd/sys-services
     directory:
-      recurse: false
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
